@@ -1,20 +1,18 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzbUCYFTXd0Wf0ziJXaLP0zNGU8mrWrwxS3Cc98eh6O6Vr2DrtJby5F28vPEqQg_MKG/exec";
-
 const refreshBtn = document.getElementById("refresh-btn");
 
+// 🟢 Ejecuta la función updateCrypto() del Apps Script
 async function actualizarSheet() {
   try {
     refreshBtn.disabled = true;
     refreshBtn.textContent = "Actualizando...";
 
-    // 🔥 POST que ejecuta updateCrypto()
-    await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "update" })
+    const response = await fetch(`${API_URL}?action=update`, {
+      method: "GET", // Google Apps Script acepta mejor GET en modo público
+      mode: "no-cors" // evita el bloqueo CORS en GitHub Pages
     });
 
-    // 🔄 volver a pedir los datos
+    console.log("Respuesta del Script:", response);
     await fetchSignals();
 
   } catch (err) {
@@ -26,12 +24,17 @@ async function actualizarSheet() {
   }
 }
 
+// 🟡 Carga los datos del Sheet
 async function fetchSignals() {
-  const res = await fetch(API_URL);
-  const data = await res.json();
-
-  console.log("Datos recibidos:", data);
-  // ⚠️ acá NO tocamos render todavía
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    console.log("Datos recibidos:", data);
+    // acá luego re-renderizaremos
+  } catch (e) {
+    console.warn("No se pudieron obtener datos:", e);
+  }
 }
 
+// 🟠 Evento de botón
 refreshBtn.addEventListener("click", actualizarSheet);
