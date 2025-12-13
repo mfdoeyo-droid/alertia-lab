@@ -1,41 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#0b2697" />
   <title>AlertIA</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.webmanifest">
-  <meta name="theme-color" content="#0b2697">
-
-  <!-- Mobile -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
+  <header class="top">
+    <div class="brand">
+      <div class="title">ALERTIA</div>
+      <div class="subtitle">Vigilancia cripto en tiempo real.</div>
+      <div class="updated" id="last-updated">Última actualización: -</div>
+    </div>
 
-  <h1>ALERTIA</h1>
-  <p>Vigilancia cripto en tiempo real.</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="icon sell">🔻</span>
+        <span id="ventas-count">Ventas: 0</span>
+      </div>
+      <div class="stat">
+        <span class="icon buy">🔺</span>
+        <span id="compras-count">Compras: 0</span>
+      </div>
+    </div>
 
-  <p id="last-updated">Última actualización: -</p>
+    <button id="refresh-btn" class="btn">
+      ACTUALIZAR AHORA
+    </button>
 
-  <p>
-    <span id="ventas-count">🔻 Ventas: 0</span>
-    &nbsp;
-    <span id="compras-count">🔺 Compras: 0</span>
-  </p>
+    <div class="status" id="status-text"></div>
+  </header>
 
-  <button id="refresh-btn">ACTUALIZAR AHORA</button>
+  <main class="main">
+    <section class="section">
+      <h2 class="h2"><span class="icon sell">🔻</span> Ventas</h2>
+      <div id="ventas-container" class="cards"></div>
+    </section>
 
-  <h2>🔻 Ventas</h2>
-  <div id="ventas-container"></div>
+    <section class="section">
+      <h2 class="h2"><span class="icon buy">🔺</span> Compras</h2>
+      <div id="compras-container" class="cards"></div>
+    </section>
+  </main>
 
-  <h2>🔺 Compras</h2>
-  <div id="compras-container"></div>
+  <div id="loader-overlay" class="overlay hidden">
+    <div class="loader">
+      <div class="spinner"></div>
+      <div id="loader-text" class="loader-text">Actualizando…</div>
+    </div>
+  </div>
 
-  <script src="app.js"></script>
+  <!-- APP (datos + botón update) -->
+  <script defer src="./app.js"></script>
 </body>
 </html>
