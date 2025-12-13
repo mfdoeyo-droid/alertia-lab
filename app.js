@@ -31,7 +31,36 @@ async function actualizarSheet() {
 async function fetchSignals() {
   const res = await fetch(API_URL);
   const data = await res.json();
-  console.log("Datos recibidos:", data);
-}
 
+  console.log("Datos recibidos:", data);
+
+  const ventas = data.filter(x => x.signal === "VENTA");
+  const compras = data.filter(x => x.signal === "COMPRA");
+
+  document.getElementById("ventas-count").textContent = `Ventas: ${ventas.length}`;
+  document.getElementById("compras-count").textContent = `Compras: ${compras.length}`;
+
+  const ventasBox = document.getElementById("ventas-container");
+  const comprasBox = document.getElementById("compras-container");
+
+  ventasBox.innerHTML = "";
+  comprasBox.innerHTML = "";
+
+  ventas.forEach(v => {
+    ventasBox.innerHTML += `
+      <div class="card">
+        <b>${v.symbol}</b> | ${v.price}
+      </div>
+    `;
+  });
+
+  compras.forEach(c => {
+    comprasBox.innerHTML += `
+      <div class="card">
+        <b>${c.symbol}</b> | ${c.price}
+      </div>
+    `;
+  });
+}
+}
 refreshBtn.addEventListener("click", actualizarSheet);
