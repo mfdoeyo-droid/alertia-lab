@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>AlertIA</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b2697">
+
+  <!-- Mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- iOS support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AlertIA">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles.css">
+
+  <!-- Básico (opcional pero prolijo) -->
+  <meta name="description" content="AlertIA · Vigilancia cripto en tiempo real">
+</head>
+
+<body>
+<p class="p1"><span class="s1"><b>ALERTIA</b></span></p>
+<p class="p2"><span class="s1">Vigilancia cripto en tiempo real.</span></p>
+<p class="p3"><span class="s2">Última actualización: -</span></p>
+<p class="p3"><span class="s3">🔻</span><span class="s2"><b> Ventas: 0</b></span></p>
+<p class="p3"><span class="s3">🔺</span><span class="s2"><b> Compras: 0</b></span></p>
+<p class="p4"><span class="s1"><b>ACTUALIZAR AHORA<span class="Apple-converted-space"> </span></b></span></p>
+<h2 style="margin: 0.0px 0.0px 6.0px 0.0px; font: 10.8px 'Helvetica Neue'; color: #dfe1e6; -webkit-text-stroke: #dfe1e6"><span class="s4">🔻</span><span class="s1"><b> Ventas</b></span></h2>
+<h2 style="margin: 0.0px 0.0px 6.0px 0.0px; font: 10.8px 'Helvetica Neue'; color: #dfe1e6; -webkit-text-stroke: #dfe1e6"><span class="s4">🔺</span><span class="s1"><b> Compras</b></span></h2>
+<script type="module" src="/alertia-notify.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js");
+  }
+  </script>
+  
+</body>
+</html>
