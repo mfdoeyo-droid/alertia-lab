@@ -7,16 +7,16 @@ async function actualizarSheet() {
     refreshBtn.disabled = true;
     refreshBtn.textContent = "Actualizando...";
 
-    // 1️⃣ POST vacío → dispara doPost()
-    await fetch(API_URL + "?action=update", {
+    // 🔥 Dispara doPost() (no se espera respuesta)
+    fetch(API_URL + "?action=update", {
       method: "POST",
       mode: "no-cors"
     });
 
-    // 2️⃣ pequeña espera para que el Sheet escriba
-    await new Promise(r => setTimeout(r, 1500));
+    // ⏱️ Espera real para que el Sheet escriba
+    await new Promise(r => setTimeout(r, 2000));
 
-    // 3️⃣ GET → trae los datos nuevos
+    // 🔄 Trae datos nuevos
     await fetchSignals();
 
   } catch (err) {
@@ -47,19 +47,16 @@ async function fetchSignals() {
   comprasBox.innerHTML = "";
 
   ventas.forEach(v => {
-    ventasBox.innerHTML += `
-      <div class="card">
-        <b>${v.symbol}</b> | ${v.price}
-      </div>
-    `;
+    ventasBox.innerHTML += `<div class="card"><b>${v.symbol}</b> | ${v.price}</div>`;
   });
 
   compras.forEach(c => {
-    comprasBox.innerHTML += `
-      <div class="card">
-        <b>${c.symbol}</b> | ${c.price}
-      </div>
-    `;
+    comprasBox.innerHTML += `<div class="card"><b>${c.symbol}</b> | ${c.price}</div>`;
   });
 }
+
 refreshBtn.addEventListener("click", actualizarSheet);
+
+// 👇 CARGA INICIAL (esto faltaba)
+fetchSignals();
+
