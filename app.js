@@ -62,5 +62,4 @@ async function fetchSignals() {
     `;
   });
 }
-}
 refreshBtn.addEventListener("click", actualizarSheet);
