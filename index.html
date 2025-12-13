@@ -2,61 +2,40 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-
   <title>AlertIA</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0b2697">
 
   <!-- Mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0b2697">
-
-  <!-- iOS support -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="AlertIA">
-
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
-
-  <meta name="description" content="AlertIA · Vigilancia cripto en tiempo real">
 </head>
 
 <body>
 
-  <header class="header">
-    <h1>ALERTIA</h1>
-    <p class="subtitle">Vigilancia cripto en tiempo real.</p>
+  <h1>ALERTIA</h1>
+  <p>Vigilancia cripto en tiempo real.</p>
 
-    <p id="last-updated" class="last-updated">
-      Última actualización: -
-    </p>
+  <p id="last-updated">Última actualización: -</p>
 
-    <div class="counts">
-      <span id="ventas-count">🔻 Ventas: 0</span>
-      <span id="compras-count">🔺 Compras: 0</span>
-    </div>
+  <p>
+    <span id="ventas-count">🔻 Ventas: 0</span>
+    &nbsp;
+    <span id="compras-count">🔺 Compras: 0</span>
+  </p>
 
-    <button id="refresh-btn" class="refresh-btn">
-      ACTUALIZAR AHORA
-    </button>
-  </header>
+  <button id="refresh-btn">ACTUALIZAR AHORA</button>
 
-  <main class="content">
-    <section>
-      <h2>🔻 Ventas</h2>
-      <div id="ventas-container"></div>
-    </section>
+  <h2>🔻 Ventas</h2>
+  <div id="ventas-container"></div>
 
-    <section>
-      <h2>🔺 Compras</h2>
-      <div id="compras-container"></div>
-    </section>
-  </main>
+  <h2>🔺 Compras</h2>
+  <div id="compras-container"></div>
 
-  <!-- JS principal -->
   <script src="app.js"></script>
-
 </body>
 </html>
