@@ -76,14 +76,15 @@
       navigator.serviceWorker
         .register("/firebase-messaging-sw.js")
         .then(reg => {
-          console.log("SW registrado OK:", reg.scope);
+          console.log("🔥 Firebase SW activo:", reg.scope);
         })
         .catch(err => {
-          console.error("SW error:", err);
+          console.error("❌ Firebase SW error:", err);
         });
     });
   }
 </script>
+
 
   
   
