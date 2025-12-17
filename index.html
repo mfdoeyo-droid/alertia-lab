@@ -70,6 +70,22 @@
     });
   }
 </script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/firebase-messaging-sw.js")
+        .then(reg => {
+          console.log("SW registrado OK:", reg.scope);
+        })
+        .catch(err => {
+          console.error("SW error:", err);
+        });
+    });
+  }
+</script>
+
+  
   
 </body>
 </html>
