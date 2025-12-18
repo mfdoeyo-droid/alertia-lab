@@ -4,8 +4,6 @@
 const API_URL =
   "https://script.google.com/macros/s/AKfycbzbUCYFTXd0Wf0ziJXaLP0zNGU8mrWrwxS3Cc98eh6O6Vr2DrtJby5F28vPEqQg_MKG/exec";
 
-const COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
-
 // ===============================
 // DOM
 // ===============================
@@ -17,52 +15,27 @@ const lastUpdatedEl = document.getElementById("last-updated");
 const refreshBtn = document.getElementById("refresh-btn");
 
 // ===============================
-// EVENT LOGIC
+// HELPERS
 // ===============================
-function shouldTriggerEvent(symbol, signal, target) {
-  const now = Date.now();
-
-  const saved =
-    JSON.parse(localStorage.getItem(symbol)) || {
-      lastSignal: "",
-      lastTarget: null,
-      lastEventAt: 0
-    };
-
-  // Sin señal → no evento
-  if (!signal) return false;
-
-  // Cambio de señal → EVENTO
-  if (saved.lastSignal !== signal) {
-    save(symbol, signal, target, now);
-    return true;
-  }
-
-  // Cambio de objetivo → EVENTO (TU decisión)
-  if (saved.lastTarget !== target && target !== null) {
-    save(symbol, signal, target, now);
-    return true;
-  }
-
-  // Cooldown
-  if (now - saved.lastEventAt < COOLDOWN_MS) {
-    return false;
-  }
-
-  // Misma señal, fuera de cooldown → EVENTO
-  save(symbol, signal, target, now);
-  return true;
+function format(val) {
+  if (val === null || val === undefined || val === "" || isNaN(val)) return "-";
+  return Number(val).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  });
 }
 
-function save(symbol, signal, target, time) {
-  localStorage.setItem(
-    symbol,
-    JSON.stringify({
-      lastSignal: signal,
-      lastTarget: target,
-      lastEventAt: time
-    })
-  );
+// % de cercanía al objetivo
+function percentToTarget(price, target, tipo) {
+  if (!price || !target) return Infinity;
+
+  if (tipo === "COMPRA") {
+    // cuanto más alto, más cerca
+    return Math.abs((price - target) / target);
+  } else {
+    // VENTA: cuanto más bajo, más cerca
+    return Math.abs((target - price) / target);
+  }
 }
 
 // ===============================
@@ -79,15 +52,19 @@ async function fetchSignals() {
     data.forEach(item => {
       if (item.signal === "VENTA") ventas.push(item);
       if (item.signal === "COMPRA") compras.push(item);
+    });
 
-      const target =
-        item.signal === "VENTA" ? item.targetSell : item.targetBuy;
+    // Orden por cercanía porcentual al objetivo
+    ventas.sort((a, b) => {
+      const da = percentToTarget(a.price, a.targetSell, "VENTA");
+      const db = percentToTarget(b.price, b.targetSell, "VENTA");
+      return da - db;
+    });
 
-      if (shouldTriggerEvent(item.symbol, item.signal, target)) {
-        console.log(
-          `🔔 EVENTO → ${item.symbol} ${item.signal} (objetivo ${target})`
-        );
-      }
+    compras.sort((a, b) => {
+      const da = percentToTarget(a.price, a.targetBuy, "COMPRA");
+      const db = percentToTarget(b.price, b.targetBuy, "COMPRA");
+      return da - db;
     });
 
     renderCards(ventasContainer, ventas, "VENTA");
@@ -104,6 +81,7 @@ async function fetchSignals() {
         minute: "2-digit",
         second: "2-digit"
       });
+
   } catch (err) {
     console.error("Error al traer datos:", err);
     lastUpdatedEl.textContent = "Error al actualizar";
@@ -144,14 +122,6 @@ function renderCards(container, list, tipo) {
   });
 }
 
-function format(val) {
-  if (val === null || val === undefined || val === "") return "-";
-  return Number(val).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 6
-  });
-}
-
 // ===============================
 // UPDATE BUTTON
 // ===============================
@@ -177,7 +147,7 @@ async function actualizarSheet() {
 refreshBtn.addEventListener("click", actualizarSheet);
 
 // ===============================
-// AUTO REFRESH
+// INIT
 // ===============================
 fetchSignals();
 setInterval(fetchSignals, 15 * 60 * 1000);
