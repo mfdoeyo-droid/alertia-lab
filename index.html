@@ -2,10 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <meta name="theme-color" content="#0b2697" />
+
   <title>AlertIA</title>
 
+  <!-- Estilos -->
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
@@ -54,39 +57,24 @@
     </div>
   </div>
 
-  <!-- APP (datos + botón update) -->
+  <!-- Lógica principal -->
   <script defer src="./app.js"></script>
+
+  <!-- 🔔 Service Worker (SOLO ESTE, SIN DUPLICADOS) -->
   <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/service-worker.js", { scope: "/" })
-        .then(reg => {
-          console.log("SW registrado:", reg.scope);
-        })
-        .catch(err => {
-          console.error("SW error:", err);
-        });
-    });
-  }
-</script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker
-        .register("/firebase-messaging-sw.js")
-        .then(reg => {
-          console.log("🔥 Firebase SW activo:", reg.scope);
-        })
-        .catch(err => {
-          console.error("❌ Firebase SW error:", err);
-        });
-    });
-  }
-</script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("./firebase-messaging-sw.js")
+          .then(reg => {
+            console.log("Service Worker registrado:", reg.scope);
+          })
+          .catch(err => {
+            console.error("Error registrando Service Worker:", err);
+          });
+      });
+    }
+  </script>
 
-
-  
-  
 </body>
 </html>
