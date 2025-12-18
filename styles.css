@@ -1,212 +1,148 @@
-// ===============================
-// CONFIG
-// ===============================
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbzbUCYFTXd0Wf0ziJXaLP0zNGU8mrWrwxS3Cc98eh6O6Vr2DrtJby5F28vPEqQg_MKG/exec";
-
-const COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
-const EVENT_BORDER_MS = 10 * 60 * 1000; // 10 minutos
-
-// ===============================
-// DOM
-// ===============================
-const ventasContainer = document.getElementById("ventas-container");
-const comprasContainer = document.getElementById("compras-container");
-const ventasCountEl = document.getElementById("ventas-count");
-const comprasCountEl = document.getElementById("compras-count");
-const lastUpdatedEl = document.getElementById("last-updated");
-const refreshBtn = document.getElementById("refresh-btn");
-
-// ===============================
-// EVENT LOGIC
-// ===============================
-function shouldTriggerEvent(symbol, signal, target) {
-  const now = Date.now();
-
-  const saved =
-    JSON.parse(localStorage.getItem(symbol)) || {
-      lastSignal: "",
-      lastTarget: null,
-      lastEventAt: 0
-    };
-
-  if (!signal) return false;
-
-  if (saved.lastSignal !== signal) {
-    save(symbol, signal, target, now);
-    return true;
-  }
-
-  if (saved.lastTarget !== target && target !== null) {
-    save(symbol, signal, target, now);
-    return true;
-  }
-
-  if (now - saved.lastEventAt < COOLDOWN_MS) {
-    return false;
-  }
-
-  save(symbol, signal, target, now);
-  return true;
+/* ===============================
+   RESET / BASE
+=============================== */
+* {
+  box-sizing: border-box;
 }
 
-function save(symbol, signal, target, time) {
-  localStorage.setItem(
-    symbol,
-    JSON.stringify({
-      lastSignal: signal,
-      lastTarget: target,
-      lastEventAt: time
-    })
-  );
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Ubuntu, sans-serif;
+  background: #0e0e13;
+  color: #e6e6eb;
 }
 
-function isRecentEvent(symbol) {
-  const saved = JSON.parse(localStorage.getItem(symbol));
-  if (!saved) return false;
-  return Date.now() - saved.lastEventAt < EVENT_BORDER_MS;
+/* ===============================
+   HEADER
+=============================== */
+.top {
+  padding: 16px;
+  background: #111118;
+  border-bottom: 1px solid #1f1f2b;
 }
 
-// ===============================
-// HELPERS
-// ===============================
-function calcPercentDistance(price, target, tipo) {
-  if (!price || !target) return null;
-
-  const diff = tipo === "COMPRA"
-    ? (price - target) / target
-    : (target - price) / target;
-
-  return diff;
+.brand .title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-// ===============================
-// FETCH + RENDER
-// ===============================
-async function fetchSignals() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-
-    const ventas = [];
-    const compras = [];
-
-    data.forEach(item => {
-      const target =
-        item.signal === "VENTA" ? item.targetSell : item.targetBuy;
-
-      if (shouldTriggerEvent(item.symbol, item.signal, target)) {
-        console.log(`🔔 EVENTO → ${item.symbol} ${item.signal}`);
-      }
-
-      const percent = calcPercentDistance(
-        item.price,
-        target,
-        item.signal
-      );
-
-      const enriched = { ...item, percent };
-
-      if (item.signal === "VENTA") ventas.push(enriched);
-      if (item.signal === "COMPRA") compras.push(enriched);
-    });
-
-    // ORDEN POR % DE CERCANÍA
-    ventas.sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0));
-    compras.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0));
-
-    renderCards(ventasContainer, ventas, "VENTA");
-    renderCards(comprasContainer, compras, "COMPRA");
-
-    ventasCountEl.textContent = `🔻 Ventas: ${ventas.length}`;
-    comprasCountEl.textContent = `🔺 Compras: ${compras.length}`;
-
-    const now = new Date();
-    lastUpdatedEl.textContent =
-      "Última actualización: " +
-      now.toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-  } catch (err) {
-    console.error("Error al traer datos:", err);
-    lastUpdatedEl.textContent = "Error al actualizar";
-  }
+.brand .subtitle {
+  font-size: 0.8rem;
+  opacity: 0.75;
 }
 
-// ===============================
-// UI
-// ===============================
-function renderCards(container, list, tipo) {
-  container.innerHTML = "";
-
-  if (!list.length) {
-    container.innerHTML =
-      "<div class='empty'>Sin señales activas.</div>";
-    return;
-  }
-
-  list.forEach(item => {
-    const target =
-      tipo === "VENTA" ? item.targetSell : item.targetBuy;
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    if (isRecentEvent(item.symbol)) {
-      card.classList.add("recent-event"); // borde naranja
-    }
-
-    card.innerHTML = `
-      <div class="card-header">
-        <strong>${item.symbol}</strong>
-        <span class="chip ${tipo.toLowerCase()}">${tipo}</span>
-      </div>
-      <div class="card-body">
-        <div>Actual: ${format(item.price)}</div>
-        <div>Objetivo: ${format(target)}</div>
-      </div>
-    `;
-
-    container.appendChild(card);
-  });
+.updated {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  opacity: 0.6;
 }
 
-function format(val) {
-  if (val === null || val === undefined || val === "") return "-";
-  return Number(val).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 6
-  });
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 0.85rem;
 }
 
-// ===============================
-// UPDATE BUTTON
-// ===============================
-async function actualizarSheet() {
-  refreshBtn.disabled = true;
-  refreshBtn.textContent = "Actualizando…";
-
-  try {
-    await fetch(API_URL + "?action=update", {
-      method: "POST",
-      mode: "no-cors"
-    });
-
-    setTimeout(fetchSignals, 1500);
-  } catch (err) {
-    console.error("Error update:", err);
-  } finally {
-    refreshBtn.disabled = false;
-    refreshBtn.textContent = "ACTUALIZAR AHORA";
-  }
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-refreshBtn.addEventListener("click", actualizarSheet);
+.btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 10px;
+  font-weight: 600;
+  background: #ff9800;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-// ===============================
-// AUTO REFRESH
-// ===============================
-fetchSignals();
-setInterval(fetchSignals, 15 * 60 * 1000);
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===============================
+   MAIN
+=============================== */
+.main {
+  padding: 16px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.h2 {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===============================
+   CARDS
+=============================== */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  background: #151520;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 4px solid #ff9800;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.card-symbol {
+  font-weight: 700;
+}
+
+.chip {
+  font-size: 0.65rem;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #2a2a38;
+  color: #ff9800;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.card-body {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.empty {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  padding: 6px 0;
+}
+
+/* ===============================
+   ICON COLORS (suaves)
+=============================== */
+.icon.buy {
+  color: #9ccc65;
+}
+
+.icon.sell {
+  color: #ef9a9a;
+}
