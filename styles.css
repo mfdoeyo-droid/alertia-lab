@@ -1,127 +1,212 @@
-:root{
-  --bg:#0e0e13;
-  --card:#141722;
-  --muted:#b8bfcc;
-  --text:#ffffff;
-  --blue:#0b2697;
-  --border:#23283a;
+// ===============================
+// CONFIG
+// ===============================
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbzbUCYFTXd0Wf0ziJXaLP0zNGU8mrWrwxS3Cc98eh6O6Vr2DrtJby5F28vPEqQg_MKG/exec";
+
+const COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
+const EVENT_BORDER_MS = 10 * 60 * 1000; // 10 minutos
+
+// ===============================
+// DOM
+// ===============================
+const ventasContainer = document.getElementById("ventas-container");
+const comprasContainer = document.getElementById("compras-container");
+const ventasCountEl = document.getElementById("ventas-count");
+const comprasCountEl = document.getElementById("compras-count");
+const lastUpdatedEl = document.getElementById("last-updated");
+const refreshBtn = document.getElementById("refresh-btn");
+
+// ===============================
+// EVENT LOGIC
+// ===============================
+function shouldTriggerEvent(symbol, signal, target) {
+  const now = Date.now();
+
+  const saved =
+    JSON.parse(localStorage.getItem(symbol)) || {
+      lastSignal: "",
+      lastTarget: null,
+      lastEventAt: 0
+    };
+
+  if (!signal) return false;
+
+  if (saved.lastSignal !== signal) {
+    save(symbol, signal, target, now);
+    return true;
+  }
+
+  if (saved.lastTarget !== target && target !== null) {
+    save(symbol, signal, target, now);
+    return true;
+  }
+
+  if (now - saved.lastEventAt < COOLDOWN_MS) {
+    return false;
+  }
+
+  save(symbol, signal, target, now);
+  return true;
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  background: var(--bg);
-  color: var(--text);
+function save(symbol, signal, target, time) {
+  localStorage.setItem(
+    symbol,
+    JSON.stringify({
+      lastSignal: signal,
+      lastTarget: target,
+      lastEventAt: time
+    })
+  );
 }
 
-.top{
-  padding:18px 16px 14px 16px;
-  background: linear-gradient(180deg, rgba(11,38,151,.25), rgba(11,38,151,0));
-  border-bottom: 1px solid rgba(255,255,255,.06);
+function isRecentEvent(symbol) {
+  const saved = JSON.parse(localStorage.getItem(symbol));
+  if (!saved) return false;
+  return Date.now() - saved.lastEventAt < EVENT_BORDER_MS;
 }
 
-.title{
-  font-weight:800;
-  letter-spacing:.5px;
-  font-size:34px;
-  margin-bottom:2px;
+// ===============================
+// HELPERS
+// ===============================
+function calcPercentDistance(price, target, tipo) {
+  if (!price || !target) return null;
+
+  const diff = tipo === "COMPRA"
+    ? (price - target) / target
+    : (target - price) / target;
+
+  return diff;
 }
 
-.subtitle{color:var(--muted); font-size:14px; margin-bottom:10px}
-.updated{color:var(--muted); font-size:12px; margin-bottom:10px}
+// ===============================
+// FETCH + RENDER
+// ===============================
+async function fetchSignals() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
 
-.stats{
-  display:flex;
-  gap:14px;
-  margin:10px 0 12px 0;
-  color:var(--text);
-}
-.stat{display:flex; gap:8px; align-items:center; font-weight:700}
-.icon{opacity:.9}
-.buy{color:#45e3a1}
-.sell{color:#ff6b6b}
+    const ventas = [];
+    const compras = [];
 
-.btn{
-  width:100%;
-  padding:14px 12px;
-  border:none;
-  border-radius:14px;
-  background: var(--blue);
-  color:white;
-  font-weight:800;
-  letter-spacing:.5px;
-  font-size:14px;
-}
-.btn:active{transform:scale(.99)}
-.btn[disabled]{opacity:.6}
+    data.forEach(item => {
+      const target =
+        item.signal === "VENTA" ? item.targetSell : item.targetBuy;
 
-.status{
-  margin-top:10px;
-  font-size:12px;
-  color: var(--muted);
-  min-height:16px;
-}
+      if (shouldTriggerEvent(item.symbol, item.signal, target)) {
+        console.log(`🔔 EVENTO → ${item.symbol} ${item.signal}`);
+      }
 
-.main{padding:12px 16px 24px 16px}
-.section{margin-top:14px}
-.h2{
-  margin:10px 0 10px 0;
-  font-size:16px;
-  color:#dfe1e6;
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
+      const percent = calcPercentDistance(
+        item.price,
+        target,
+        item.signal
+      );
 
-.cards{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
+      const enriched = { ...item, percent };
+
+      if (item.signal === "VENTA") ventas.push(enriched);
+      if (item.signal === "COMPRA") compras.push(enriched);
+    });
+
+    // ORDEN POR % DE CERCANÍA
+    ventas.sort((a, b) => (a.percent ?? 0) - (b.percent ?? 0));
+    compras.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0));
+
+    renderCards(ventasContainer, ventas, "VENTA");
+    renderCards(comprasContainer, compras, "COMPRA");
+
+    ventasCountEl.textContent = `🔻 Ventas: ${ventas.length}`;
+    comprasCountEl.textContent = `🔺 Compras: ${compras.length}`;
+
+    const now = new Date();
+    lastUpdatedEl.textContent =
+      "Última actualización: " +
+      now.toLocaleTimeString("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+  } catch (err) {
+    console.error("Error al traer datos:", err);
+    lastUpdatedEl.textContent = "Error al actualizar";
+  }
 }
 
-.card{
-  background: var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-}
-.card .row{display:flex; justify-content:space-between; gap:10px; align-items:center}
-.badge{
-  font-size:12px;
-  font-weight:800;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.12);
-}
-.badge.buy{background: rgba(69,227,161,.12)}
-.badge.sell{background: rgba(255,107,107,.12)}
-.small{color:var(--muted); font-size:12px; margin-top:6px}
-.mono{font-variant-numeric: tabular-nums}
+// ===============================
+// UI
+// ===============================
+function renderCards(container, list, tipo) {
+  container.innerHTML = "";
 
-.overlay{
-  position:fixed; inset:0;
-  background: rgba(0,0,0,.55);
-  display:flex; align-items:center; justify-content:center;
-  z-index:9999;
+  if (!list.length) {
+    container.innerHTML =
+      "<div class='empty'>Sin señales activas.</div>";
+    return;
+  }
+
+  list.forEach(item => {
+    const target =
+      tipo === "VENTA" ? item.targetSell : item.targetBuy;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    if (isRecentEvent(item.symbol)) {
+      card.classList.add("recent-event"); // borde naranja
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <strong>${item.symbol}</strong>
+        <span class="chip ${tipo.toLowerCase()}">${tipo}</span>
+      </div>
+      <div class="card-body">
+        <div>Actual: ${format(item.price)}</div>
+        <div>Objetivo: ${format(target)}</div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
 }
-.hidden{display:none}
-.loader{
-  background:#111420;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:16px;
-  padding:16px;
-  width:min(320px, 92vw);
-  text-align:center;
+
+function format(val) {
+  if (val === null || val === undefined || val === "") return "-";
+  return Number(val).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  });
 }
-.spinner{
-  width:34px; height:34px;
-  border-radius:50%;
-  border:3px solid rgba(255,255,255,.2);
-  border-top-color: white;
-  margin:0 auto 10px auto;
-  animation: spin 1s linear infinite;
+
+// ===============================
+// UPDATE BUTTON
+// ===============================
+async function actualizarSheet() {
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "Actualizando…";
+
+  try {
+    await fetch(API_URL + "?action=update", {
+      method: "POST",
+      mode: "no-cors"
+    });
+
+    setTimeout(fetchSignals, 1500);
+  } catch (err) {
+    console.error("Error update:", err);
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "ACTUALIZAR AHORA";
+  }
 }
-@keyframes spin{to{transform:rotate(360deg)}}
-.loader-text{color:#dfe1e6; font-size:13px}
+
+refreshBtn.addEventListener("click", actualizarSheet);
+
+// ===============================
+// AUTO REFRESH
+// ===============================
+fetchSignals();
+setInterval(fetchSignals, 15 * 60 * 1000);
